@@ -1,0 +1,123 @@
+#!/bin/bash
+
+if [ "$UID" -ne 0 ]; then
+    echo "You must be root!."
+    exit 1
+fi
+
+echo "You are root script is running."
+
+apt update
+apt upgrade
+apt dist-upgrade
+
+echo "System is patched."
+
+SSHD_CONFIG="/etc/ssh/sshd_config"
+KEY_DIR="$HOME/.ssh"
+KEY_NAME="key"
+AUTHORIZED_KEYS="$KEY_DIR/authorized_keys"
+
+echo "Creating ssh keys..."
+mkdir -p $KEY_DIR
+ssh-keygen -t rsa -b 4096 -f $KEY_DIR/$KEY_NAME -N ""
+
+cat $KEY_DIR/$KEY_NAME.pub >> $AUTHORIZED_KEYS
+
+echo "Private Key save it! (script is sleeping 10 sec.):"
+cat $KEY_DIR/$KEY_NAME
+echo ""
+
+sleep 10
+
+rm -f $KEY_DIR/$KEY_NAME
+rm -f $KEY_DIR/key.pub
+
+sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication no/' $SSHD_CONFIG
+sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' $SSHD_CONFIG
+
+read -p "Wich SSH-Port?: " ssh_port
+
+sed -i "s/^#Port 22/Port $ssh_port/" $SSHD_CONFIG
+sed -i "s/^Port .*/Port $ssh_port/" $SSHD_CONFIG
+sed -i 's/^#StrictModes yes/StrictModes yes/' $SSHD_CONFIG
+sed -i 's/^#MaxAuthTries 6/MaxAuthTries 3/' $SSHD_CONFIG
+
+systemctl restart sshd
+
+echo "SSH is configurated."
+
+apt install fail2ban bpytop net-tools git curl rsyslog ufw htop -y
+
+echo "Services are installed."
+
+ufw default deny incoming
+ufw default allow outgoing
+ufw logging medium
+
+SSH_PORT=$(grep "^Port " $SSHD_CONFIG | awk '{print $2}')
+
+if [ -z "$SSH_PORT" ]; then
+    echo "SSH-Portnumber couldn't be found using default SSH-Port for UFW."
+    SSH_PORT=22
+fi
+
+ufw allow $SSH_PORT/tcp
+
+ufw enable
+
+echo "UFW-Rule added for SSH-Port $SSH_PORT."
+
+cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+
+FAIL2BAN_CONFIG="/etc/fail2ban/jail.local"
+
+read -p "Wich Bantime? (in sek.): " bantime
+read -p "Wich Findtime? (in sek.): " findtime
+read -p "Wich Retrys?: " maxretry
+
+sed -i 's/^#bantime.increment = true/bantime.increment = true/' $FAIL2BAN_CONFIG
+sed -i "s/^bantime  = .*/bantime  = $bantime/" $FAIL2BAN_CONFIG
+sed -i "s/^findtime  = .*/findtime  = $findtime/" $FAIL2BAN_CONFIG
+sed -i "s/^maxretry = .*/maxretry = $maxretry/" $FAIL2BAN_CONFIG
+
+systemctl restart fail2ban
+
+echo "Fail2ban configurated"
+
+sed -i 's/^GRUB_TIMEOUT=5/GRUB_TIMEOUT=0/' /etc/default/grub
+
+update-grub
+
+echo "Grub Timeout set to 0"
+
+DNS_CONFIG="/etc/resolv.conf"
+
+if [ -f "$DNS_CONFIG" ]; then
+    cp $DNS_CONFIG /etc/resolv.conf.bak
+
+rm -f $DNS_CONFIG
+
+read -p "Primary IPv4 DNS-Server: " dnsserverv41
+read -p "Secondary IPv4 DNS-Server: " dnsserverv42
+read -p "Primary IPv6 DNS-Server: " dnsserverv61
+read -p "Secondary IPv6 DNS-Server: " dnsserverv62
+
+nameservers=("$dnsserverv41" "$dnsserverv42" "$dnsserverv61" "$dnsserverv62")
+
+for ns in "${nameservers[@]}"; do
+        echo "nameserver $ns"
+        echo "nameserver $ns" >> $DNS_CONFIG
+    done
+
+    echo "Nameservers have been added to /etc/resolv.conf"
+else
+    echo "Error: /etc/resolv.conf does not exist."
+    exit 1
+fi
+
+echo "Using custom DNS-Server, thx using this script. Script by René (rebooting server)"
+
+sleep 4
+
+shutdown -r now
