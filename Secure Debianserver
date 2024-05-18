@@ -47,7 +47,7 @@ systemctl restart sshd
 
 echo "SSH is configurated."
 
-apt install fail2ban bpytop net-tools git curl rsyslog ufw htop -y
+apt install fail2ban bpytop net-tools git curl ufw htop -y
 
 echo "Services are installed."
 
