@@ -1,3 +1,5 @@
+#!/bin/bash
+
 apt install lighttpd-mod-openssl -y
 
 mkdir -p /etc/lighttpd/ssl/
