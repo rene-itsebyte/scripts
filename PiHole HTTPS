@@ -4,7 +4,7 @@ apt install lighttpd-mod-openssl -y
 
 mkdir -p /etc/lighttpd/ssl/
 
-openssl req -newkey rsa:2048 -nodes -keyout pihole.key -x509 -days 365 -out /etc/lighttpd/ssl/pihole.crt
+openssl req -newkey rsa:2048 -nodes -keyout pihole.key -x509 -days 365 --out /etc/lighttpd/ssl/pihole.crt
 
 cat pihole.key pihole.crt > combined.pem
 
