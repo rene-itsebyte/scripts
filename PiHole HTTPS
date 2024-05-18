@@ -6,7 +6,7 @@ mkdir -p /etc/lighttpd/ssl/
 
 openssl req -newkey rsa:2048 -nodes -keyout /etc/lighttpd/ssl/pihole.key -x509 -days 365 -out /etc/lighttpd/ssl/pihole.crt
 
-cat /etc/lighttpd/ssl/pihole.key /etc/lighttpd/ssl/pihole.crt > combined.pem
+cat /etc/lighttpd/ssl/pihole.key /etc/lighttpd/ssl/pihole.crt > /etc/lighttpd/ssl/combined.pem
 
 chown www-data -R /etc/lighttpd/ssl/
 
