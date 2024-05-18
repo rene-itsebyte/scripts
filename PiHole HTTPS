@@ -12,7 +12,7 @@ chown www-data -R /etc/lighttpd/ssl/
 
 cd /etc/lighttpd/conf-enabled/
 
-0="0"
+$0="0"
 
 cat << EOF > 20-pihole-external.conf
 #Loading openssl
