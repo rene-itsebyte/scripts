@@ -20,7 +20,7 @@ AUTHORIZED_KEYS="$KEY_DIR/authorized_keys"
 
 echo "Creating ssh keys..."
 mkdir -p $KEY_DIR
-ssh-keygen -t rsa -b 4096 -f $KEY_DIR/$KEY_NAME -N ""
+ssh-keygen -t ed25519 -f $KEY_DIR/$KEY_NAME -N ""
 
 cat $KEY_DIR/$KEY_NAME.pub >> $AUTHORIZED_KEYS
 
@@ -80,6 +80,7 @@ sed -i 's/^#bantime.increment = true/bantime.increment = true/' $FAIL2BAN_CONFIG
 sed -i "s/^bantime  = .*/bantime  = $bantime/" $FAIL2BAN_CONFIG
 sed -i "s/^findtime  = .*/findtime  = $findtime/" $FAIL2BAN_CONFIG
 sed -i "s/^maxretry = .*/maxretry = $maxretry/" $FAIL2BAN_CONFIG
+sed -i 's/^backend = auto/backend = systemd/' $FAIL2BAN_CONFIG
 
 systemctl restart fail2ban
 
